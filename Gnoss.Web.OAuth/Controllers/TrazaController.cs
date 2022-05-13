@@ -28,6 +28,7 @@ namespace ServicioCargaResultadosMVC.Controllers
             mEntityContext = entityContext;
             mLoggingService = loggingService;
             mRedisCacheWrapper = redisCacheWrapper;
+            mServicesUtilVirtuosoAndReplication = servicesUtilVirtuosoAndReplication;
             mControladorBase = new ControladorBase(loggingService, configService, entityContext, redisCacheWrapper, gnossCache, virtuosoAD, httpContextAccessor, mServicesUtilVirtuosoAndReplication);
         }
 
