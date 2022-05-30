@@ -8,7 +8,7 @@ Configuración estandar de esta aplicación en el archivo docker-compose.yml:
 
 ```yml
 oauth:
-    image: oauth
+    image: docker.gnoss.com/oauth
     env_file: .env
     ports:
      - ${puerto_oauth}:80
