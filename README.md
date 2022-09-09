@@ -2,6 +2,8 @@
 
 # Gnoss.Web.OAuth.OpenCORE
 
+![](https://github.com/equipognoss/Gnoss.Web.OAuth.OpenCORE/workflows/BuildWeb/badge.svg)
+
 Aplicación Web que se encarga de validar las firmas Oauth que le llegan a la Web o el API. Esta aplicación NO debe ser accesible desde el exterior de la plataforma GNOSS, sólo debe estar disponible para que el resto de aplicaciones puedan hacer peticiones Web a ella.
 
 Configuración estandar de esta aplicación en el archivo docker-compose.yml: 
