@@ -1,3 +1,4 @@
+using Es.Riam.AbstractsOpen;
 using Es.Riam.Gnoss.AD.EntityModel;
 using Es.Riam.Gnoss.AD.EntityModelBASE;
 using Es.Riam.Gnoss.AD.Virtuoso;
@@ -7,6 +8,7 @@ using Es.Riam.Gnoss.Util.Configuracion;
 using Es.Riam.Gnoss.Util.General;
 using Es.Riam.Gnoss.Util.Seguridad;
 using Es.Riam.Gnoss.UtilServiciosWeb;
+using Es.Riam.OpenReplication;
 using Es.Riam.Util;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -51,6 +53,7 @@ namespace Gnoss.Web.OAuth
             services.AddScoped(typeof(GnossCache));
             services.AddScoped(typeof(VirtuosoAD));
             services.AddScoped(typeof(UtilServicios));
+            services.AddScoped<IServicesUtilVirtuosoAndReplication, ServicesVirtuosoAndBidirectionalReplicationOpen>();
             string bdType = "";
             IDictionary environmentVariables = Environment.GetEnvironmentVariables();
             if (environmentVariables.Contains("connectionType"))
