@@ -3,6 +3,7 @@ using Es.Riam.Gnoss.AD.EntityModel;
 using Es.Riam.Gnoss.AD.EntityModelBASE;
 using Es.Riam.Gnoss.AD.Virtuoso;
 using Es.Riam.Gnoss.CL;
+using Es.Riam.Gnoss.CL.RelatedVirtuoso;
 using Es.Riam.Gnoss.OAuthAD;
 using Es.Riam.Gnoss.Util.Configuracion;
 using Es.Riam.Gnoss.Util.General;
@@ -54,6 +55,7 @@ namespace Gnoss.Web.OAuth
             services.AddScoped(typeof(VirtuosoAD));
             services.AddScoped(typeof(UtilServicios));
             services.AddScoped<IServicesUtilVirtuosoAndReplication, ServicesVirtuosoAndBidirectionalReplicationOpen>();
+            services.AddScoped(typeof(RelatedVirtuosoCL));
             string bdType = "";
             IDictionary environmentVariables = Environment.GetEnvironmentVariables();
             if (environmentVariables.Contains("connectionType"))
