@@ -1,6 +1,7 @@
 ﻿using Es.Riam.AbstractsOpen;
 using Es.Riam.Gnoss.AD.EntityModel;
 using Es.Riam.Gnoss.CL;
+using Es.Riam.Gnoss.CL.Trazas;
 using Es.Riam.Gnoss.LogicaOAuth.OAuth;
 using Es.Riam.Gnoss.OAuthAD;
 using Es.Riam.Gnoss.Recursos;
@@ -9,6 +10,7 @@ using Es.Riam.Gnoss.Util.General;
 using Es.Riam.Gnoss.Web.UtilOAuth;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using System;
 using System.IO;
 using System.Net;
@@ -31,12 +33,15 @@ namespace Gnoss.Web.OAuth
         private EntityContextOauth mEntityContextOauth;
         private EntityContext mEntityContext;
         private ConfigService mConfigService;
+        private RedisCacheWrapper mRedisCacheWrapper;
         private IServicesUtilVirtuosoAndReplication mServicesUtilVirtuosoAndReplication;
+        private static object BLOQUEO_COMPROBACION_TRAZA = new object();
+        private static DateTime HORA_COMPROBACION_TRAZA;
 
         /// <summary>
         /// Constructor sin parámetros
         /// </summary>
-        public ServicioOauth(GnossCache gnossCache, IHostingEnvironment env, EntityContextOauth entityContextOauth, LoggingService loggingService, EntityContext entityContext, ConfigService configService, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication)
+        public ServicioOauth(GnossCache gnossCache, IHostingEnvironment env, EntityContextOauth entityContextOauth, LoggingService loggingService, EntityContext entityContext, ConfigService configService, RedisCacheWrapper redisCacheWrapper, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication)
         {
             mGnossCache = gnossCache;
             mEnv = env;
@@ -45,6 +50,7 @@ namespace Gnoss.Web.OAuth
             mEntityContextOauth = entityContextOauth;
             mConfigService = configService;
             mServicesUtilVirtuosoAndReplication = servicesUtilVirtuosoAndReplication;
+            mRedisCacheWrapper = redisCacheWrapper;
         }
 
         /// <summary>
@@ -123,6 +129,43 @@ namespace Gnoss.Web.OAuth
             ruta = Path.Combine(ruta, "traza_" + DateTime.Now.ToString("yyyy-MM-dd") + ".txt");
 
             return ruta;
+        }
+
+        #region Métodos de trazas
+        [NonAction]
+        private void IniciarTraza()
+        {
+            if (DateTime.Now > HORA_COMPROBACION_TRAZA)
+            {
+                lock (BLOQUEO_COMPROBACION_TRAZA)
+                { 
+                    if (DateTime.Now > HORA_COMPROBACION_TRAZA)
+                    {
+                        HORA_COMPROBACION_TRAZA = DateTime.Now.AddSeconds(15);
+                        TrazasCL trazasCL = new TrazasCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication);
+                        string tiempoTrazaResultados = trazasCL.ObtenerTrazaEnCache("oauth");
+
+                        if (!string.IsNullOrEmpty(tiempoTrazaResultados))
+                        {
+                            int valor = 0;
+                            int.TryParse(tiempoTrazaResultados, out valor);
+                            LoggingService.TrazaHabilitada = true;
+                            LoggingService.TiempoMinPeticion = valor; //Para sacar los segundos
+                        }
+                        else
+                        {
+                            LoggingService.TrazaHabilitada = false;
+                            LoggingService.TiempoMinPeticion = 0;
+                        }
+                    }
+                }
+            }
+        }
+        #endregion
+
+        public override void OnActionExecuting(ActionExecutingContext filterContext)
+        {
+            IniciarTraza();
         }
 
         /// <summary>
