@@ -9,6 +9,7 @@ using Es.Riam.Gnoss.Util.Configuracion;
 using Es.Riam.Gnoss.Util.General;
 using Es.Riam.Gnoss.Util.Seguridad;
 using Es.Riam.Gnoss.UtilServiciosWeb;
+using Es.Riam.Gnoss.Web.OAuthAD;
 using Es.Riam.OpenReplication;
 using Es.Riam.Util;
 using Microsoft.AspNetCore.Builder;
@@ -41,7 +42,21 @@ namespace Gnoss.Web.OAuth
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+			ILoggerFactory loggerFactory =
+			LoggerFactory.Create(builder =>
+			{
+				builder.AddConfiguration(Configuration.GetSection("Logging"));
+				builder.AddSimpleConsole(options =>
+				{
+					options.IncludeScopes = true;
+					options.SingleLine = true;
+					options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+					options.UseUtcTimestamp = true;
+				});
+			});
+
+			services.AddSingleton(loggerFactory);
+			services.AddControllers();
             services.AddHttpContextAccessor();
             services.AddScoped(typeof(UtilTelemetry));
             services.AddScoped(typeof(Usuario));
@@ -66,13 +81,13 @@ namespace Gnoss.Web.OAuth
             {
                 bdType = Configuration.GetConnectionString("connectionType");
             }
-            if (bdType.Equals("2"))
+            if (bdType.Equals("2") || bdType.Equals("1"))
             {
                 services.AddScoped(typeof(DbContextOptions<EntityContext>));
                 services.AddScoped(typeof(DbContextOptions<EntityContextBASE>));
-            }
+				services.AddScoped(typeof(DbContextOptions<EntityContextOauth>));
+			}
             services.AddSingleton(typeof(ConfigService));
-            services.AddSingleton<ILoggerFactory, LoggerFactory>();
             services.AddMvc();
             Conexion.ServicioWeb = true;
 
@@ -118,7 +133,21 @@ namespace Gnoss.Web.OAuth
 
                         );
             }
-            else if (bdType.Equals("2"))
+			else if (bdType.Equals("1"))
+			{
+				services.AddDbContext<EntityContext, EntityContextOracle>(options =>
+						options.UseOracle(acid)
+						);
+				services.AddDbContext<EntityContextBASE, EntityContextBASEOracle>(options =>
+						options.UseOracle(baseConnection)
+
+						);
+				services.AddDbContext<EntityContextOauth, EntityContextOauthOracle>(options =>
+						options.UseOracle(oauthConnection)
+
+						);
+			}
+			else if (bdType.Equals("2"))
             {
                 services.AddDbContext<EntityContext, EntityContextPostgres>(opt =>
                 {
@@ -160,24 +189,17 @@ namespace Gnoss.Web.OAuth
                 LoggingService.InicializarLogstash(configLogStash);
             }
             var entity = sp.GetService<EntityContext>();
-            LoggingService.RUTA_DIRECTORIO_ERROR = Path.Combine(mEnvironment.ContentRootPath, "logs");
+			var servicesUtilVirtuosoAndReplication = sp.GetService<IServicesUtilVirtuosoAndReplication>();
+			var loggingService = sp.GetService<LoggingService>();
+			var redisCacheWrapper = sp.GetService<RedisCacheWrapper>();
+			LoggingService.RUTA_DIRECTORIO_ERROR = Path.Combine(mEnvironment.ContentRootPath, "logs");
             EntityContextOauth.ProxyCreationEnabled = false;
-
-            //TODO Javier
-            //BaseAD.LeerConfiguracionConexion(gestorParametroAplicacion.ListaConfiguracionBBDD.Where(confBBDD=>confBBDD.TipoConexion.Equals((short)TipoConexion.SQLServer)).ToList());
-
-            //TODO Javier
-            //BaseAD.LeerConfiguracionConexion(gestorParametroAplicacion.ListaConfiguracionBBDD.Where(confBBDD => confBBDD.TipoConexion.Equals((short)TipoConexion.Redis)).ToList());
-
-            //TODO Javier
-            //BaseAD.LeerConfiguracionConexion(gestorParametroAplicacion.ListaConfiguracionBBDD.Where(confBBDD => confBBDD.TipoConexion.Equals((short)TipoConexion.Virtuoso)).ToList());
-
 
             EstablecerDominioCache(entity);
 
-            CargarIdiomasPlataforma(configService);
+			UtilServicios.CargarIdiomasPlataforma(entity, loggingService, configService, servicesUtilVirtuosoAndReplication, redisCacheWrapper);
 
-            services.AddSwaggerGen(c =>
+			services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gnoss.Web.OAuth", Version = "v1" });
             });
@@ -222,12 +244,6 @@ namespace Gnoss.Web.OAuth
             }
 
             BaseCL.DominioEstatico = dominio;
-        }
-
-        private void CargarIdiomasPlataforma(ConfigService configService)
-        {
-
-            configService.ObtenerListaIdiomas().FirstOrDefault();
         }
     }
 }
