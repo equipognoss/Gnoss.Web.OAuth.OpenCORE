@@ -11,6 +11,7 @@ using Es.Riam.Gnoss.Web.UtilOAuth;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Net;
@@ -27,6 +28,8 @@ namespace Gnoss.Web.OAuth
     [Route("[controller]")]
     public class ServicioOauth : Controller
     {
+        private static DateTime HORA_COMPROBACION_TRAZA;
+
         private LoggingService mLoggingService;
         private GnossCache mGnossCache;
         private IHostingEnvironment mEnv;
@@ -35,13 +38,13 @@ namespace Gnoss.Web.OAuth
         private ConfigService mConfigService;
         private RedisCacheWrapper mRedisCacheWrapper;
         private IServicesUtilVirtuosoAndReplication mServicesUtilVirtuosoAndReplication;
-        private static object BLOQUEO_COMPROBACION_TRAZA = new object();
-        private static DateTime HORA_COMPROBACION_TRAZA;
+        private ILogger mlogger;
+        private ILoggerFactory mLoggerFactory;
 
         /// <summary>
         /// Constructor sin parámetros
         /// </summary>
-        public ServicioOauth(GnossCache gnossCache, IHostingEnvironment env, EntityContextOauth entityContextOauth, LoggingService loggingService, EntityContext entityContext, ConfigService configService, RedisCacheWrapper redisCacheWrapper, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication)
+        public ServicioOauth(GnossCache gnossCache, IHostingEnvironment env, EntityContextOauth entityContextOauth, LoggingService loggingService, EntityContext entityContext, ConfigService configService, RedisCacheWrapper redisCacheWrapper, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication, ILogger<ServicioOauth> logger, ILoggerFactory loggerFactory)
         {
             mGnossCache = gnossCache;
             mEnv = env;
@@ -51,6 +54,8 @@ namespace Gnoss.Web.OAuth
             mConfigService = configService;
             mServicesUtilVirtuosoAndReplication = servicesUtilVirtuosoAndReplication;
             mRedisCacheWrapper = redisCacheWrapper;
+            mlogger = logger;
+            mLoggerFactory = loggerFactory;
         }
 
         /// <summary>
@@ -63,7 +68,7 @@ namespace Gnoss.Web.OAuth
         {
             try
             {
-                OAuthCN oauthCN = new OAuthCN("oauth", mEntityContext, mLoggingService, mConfigService, mEntityContextOauth, mServicesUtilVirtuosoAndReplication);
+                OAuthCN oauthCN = new OAuthCN("oauth", mEntityContext, mLoggingService, mConfigService, mEntityContextOauth, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<OAuthCN>(), mLoggerFactory);
                 oauthCN.EliminarAccessTokenUsuario(pUsuarioID);
                 oauthCN.Dispose();
             }
@@ -86,7 +91,7 @@ namespace Gnoss.Web.OAuth
             {
                 if (mGnossOAuthAuthorizationManager == null)
                 {
-                    mGnossOAuthAuthorizationManager = new GnossOAuthAuthorizationManager(mGnossCache, mEnv, mEntityContextOauth, mLoggingService, mEntityContext, mConfigService, mServicesUtilVirtuosoAndReplication);
+                    mGnossOAuthAuthorizationManager = new GnossOAuthAuthorizationManager(mGnossCache, mEnv, mEntityContextOauth, mLoggingService, mEntityContext, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<GnossOAuthAuthorizationManager>(), mLoggerFactory);
                 }
                 return mGnossOAuthAuthorizationManager;
             }
@@ -137,30 +142,25 @@ namespace Gnoss.Web.OAuth
         {
             if (DateTime.Now > HORA_COMPROBACION_TRAZA)
             {
-                lock (BLOQUEO_COMPROBACION_TRAZA)
-                { 
-                    if (DateTime.Now > HORA_COMPROBACION_TRAZA)
-                    {
-                        HORA_COMPROBACION_TRAZA = DateTime.Now.AddSeconds(15);
-                        TrazasCL trazasCL = new TrazasCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication);
-                        string tiempoTrazaResultados = trazasCL.ObtenerTrazaEnCache("oauth");
+                HORA_COMPROBACION_TRAZA = DateTime.Now.AddSeconds(15);
+                TrazasCL trazasCL = new TrazasCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<TrazasCL>(), mLoggerFactory);
+                string tiempoTrazaResultados = trazasCL.ObtenerTrazaEnCache("oauth");
 
-                        if (!string.IsNullOrEmpty(tiempoTrazaResultados))
-                        {
-                            int valor = 0;
-                            int.TryParse(tiempoTrazaResultados, out valor);
-                            LoggingService.TrazaHabilitada = true;
-                            LoggingService.TiempoMinPeticion = valor; //Para sacar los segundos
-                        }
-                        else
-                        {
-                            LoggingService.TrazaHabilitada = false;
-                            LoggingService.TiempoMinPeticion = 0;
-                        }
-                    }
+                if (!string.IsNullOrEmpty(tiempoTrazaResultados))
+                {
+                    int valor = 0;
+                    int.TryParse(tiempoTrazaResultados, out valor);
+                    LoggingService.TrazaHabilitada = true;
+                    LoggingService.TiempoMinPeticion = valor; //Para sacar los segundos
+                }
+                else
+                {
+                    LoggingService.TrazaHabilitada = false;
+                    LoggingService.TiempoMinPeticion = 0;
                 }
             }
         }
+
         #endregion
 
         public override void OnActionExecuting(ActionExecutingContext filterContext)
