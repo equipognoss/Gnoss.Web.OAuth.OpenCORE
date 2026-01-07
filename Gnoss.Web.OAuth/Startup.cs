@@ -94,86 +94,25 @@ namespace Gnoss.Web.OAuth
             services.AddMvc();
             Conexion.ServicioWeb = true;
 
-            string acid = "";
-            if (environmentVariables.Contains("acid"))
-            {
-                acid = environmentVariables["acid"] as string;
-            }
-            else
-            {
-                acid = Configuration.GetConnectionString("acid");
-            }
-            string baseConnection = "";
-            if (environmentVariables.Contains("base"))
-            {
-                baseConnection = environmentVariables["base"] as string;
-            }
-            else
-            {
-                baseConnection = Configuration.GetConnectionString("base");
-            }
-
-            string oauthConnection = "";
-            if (environmentVariables.Contains("oauth"))
-            {
-                oauthConnection = environmentVariables["oauth"] as string;
-            }
-            else
-            {
-                oauthConnection = Configuration.GetConnectionString("oauth");
-            }
             if (bdType.Equals("0"))
             {
-                services.AddDbContext<EntityContext>(options =>
-                        options.UseSqlServer(acid, o => o.UseCompatibilityLevel(110))
-                        );
-                services.AddDbContext<EntityContextBASE>(options =>
-                        options.UseSqlServer(baseConnection, o => o.UseCompatibilityLevel(110))
-
-                        );
-                services.AddDbContext<EntityContextOauth>(options =>
-                        options.UseSqlServer(oauthConnection, o => o.UseCompatibilityLevel(110))
-
-                        );
+                services.AddDbContext<EntityContext>();
+                services.AddDbContext<EntityContextBASE>();
+                services.AddDbContext<EntityContextOauth>();
             }
-			else if (bdType.Equals("1"))
-			{
-				services.AddDbContext<EntityContext, EntityContextOracle>(options =>
-						options.UseOracle(acid)
-						);
-				services.AddDbContext<EntityContextBASE, EntityContextBASEOracle>(options =>
-						options.UseOracle(baseConnection)
-
-						);
-				services.AddDbContext<EntityContextOauth, EntityContextOauthOracle>(options =>
-						options.UseOracle(oauthConnection)
-
-						);
-			}
-			else if (bdType.Equals("2"))
+            else if (bdType.Equals("1"))
             {
-                services.AddDbContext<EntityContext, EntityContextPostgres>(opt =>
-                {
-                    var builder = new NpgsqlDbContextOptionsBuilder(opt);
-                    builder.SetPostgresVersion(new Version(9, 6));
-                    opt.UseNpgsql(acid);
-
-                });
-                services.AddDbContext<EntityContextBASE, EntityContextBASEPostgres>(opt =>
-                {
-                    var builder = new NpgsqlDbContextOptionsBuilder(opt);
-                    builder.SetPostgresVersion(new Version(9, 6));
-                    opt.UseNpgsql(baseConnection);
-
-                });
-                services.AddDbContext<EntityContextOauth>(opt =>
-                {
-                    var builder = new NpgsqlDbContextOptionsBuilder(opt);
-                    builder.SetPostgresVersion(new Version(9, 6));
-                    opt.UseNpgsql(oauthConnection);
-
-                });
+                services.AddDbContext<EntityContext, EntityContextOracle>();
+                services.AddDbContext<EntityContextBASE, EntityContextBASEOracle>();
+                services.AddDbContext<EntityContextOauth, EntityContextOauthOracle>();
             }
+            else if (bdType.Equals("2"))
+            {
+                services.AddDbContext<EntityContext, EntityContextPostgres>();
+                services.AddDbContext<EntityContextBASE, EntityContextBASEPostgres>();
+                services.AddDbContext<EntityContextOauth>();
+            }
+
             var sp = services.BuildServiceProvider();
 
             // Resolve the services from the service provider
