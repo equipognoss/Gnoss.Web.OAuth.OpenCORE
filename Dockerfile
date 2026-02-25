@@ -7,13 +7,11 @@ RUN sed -i 's/\[openssl_init\]/# [openssl_init]/' /etc/ssl/openssl.cnf &&\
 
 WORKDIR /app
 
-COPY Gnoss.Web.OAuth/*.csproj ./
-
-RUN dotnet restore
-
 COPY . ./
 
-RUN dotnet publish Gnoss.Web.OAuth/Gnoss.Web.OAuth.csproj -c Release -o out
+RUN dotnet restore Gnoss.Web.OAuth.OpenCORE/Gnoss.Web.OAuth/Gnoss.Web.OAuth.csproj
+
+RUN dotnet publish Gnoss.Web.OAuth.OpenCORE/Gnoss.Web.OAuth/Gnoss.Web.OAuth.csproj -c Release -o out
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 
