@@ -38,7 +38,7 @@ namespace Gnoss.Web.OAuth
         private ConfigService mConfigService;
         private RedisCacheWrapper mRedisCacheWrapper;
         private IServicesUtilVirtuosoAndReplication mServicesUtilVirtuosoAndReplication;
-        private ILogger mlogger;
+        private ILogger mLogger;
         private ILoggerFactory mLoggerFactory;
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace Gnoss.Web.OAuth
             mConfigService = configService;
             mServicesUtilVirtuosoAndReplication = servicesUtilVirtuosoAndReplication;
             mRedisCacheWrapper = redisCacheWrapper;
-            mlogger = logger;
+            mLogger = logger;
             mLoggerFactory = loggerFactory;
         }
 
@@ -74,7 +74,7 @@ namespace Gnoss.Web.OAuth
             }
             catch (Exception ex)
             {
-                GuardarLogError(ex.Message + "\\n" + ex.StackTrace);
+                mLoggingService.GuardarLogError(ex, mLogger);
                 throw ex;
             }
             finally
@@ -113,7 +113,7 @@ namespace Gnoss.Web.OAuth
             }
             catch (Exception ex)
             {
-                GuardarLogError(ex.Message + "\\n" + ex.StackTrace);
+                mLoggingService.GuardarLogError(ex, mLogger);
                 throw;
             }
             finally
@@ -166,36 +166,6 @@ namespace Gnoss.Web.OAuth
         public override void OnActionExecuting(ActionExecutingContext filterContext)
         {
             IniciarTraza();
-        }
-
-        /// <summary>
-        /// Guarda el log del error.
-        /// </summary>
-        [NonAction]
-        public void GuardarLogError(string pError)
-        {
-            string directorio = Path.Combine(mEnv.ContentRootPath, "logs");
-            Directory.CreateDirectory(directorio);
-            string rutaFichero = Path.Combine(directorio, "log_apiRecursos_" + DateTime.Now.ToString("yyyy-MM-dd") + ".log");
-
-            //Si el fichero supera el tamaño máximo lo elimino
-            if (System.IO.File.Exists(rutaFichero))
-            {
-                FileInfo fichero = new FileInfo(rutaFichero);
-                if (fichero.Length > 1000000)
-                {
-                    fichero.Delete();
-                }
-            }
-
-            //Añado el error al fichero
-            using (StreamWriter sw = new StreamWriter(rutaFichero, true, System.Text.Encoding.Default))
-            {
-                sw.WriteLine(Environment.NewLine + "Fecha: " + DateTime.Now + Environment.NewLine + Environment.NewLine);
-                // Escribo el error
-                sw.Write(pError);
-                sw.WriteLine(Environment.NewLine + Environment.NewLine + "___________________________________________________________________________________________" + Environment.NewLine + Environment.NewLine + Environment.NewLine);
-            }
         }
     }
 }

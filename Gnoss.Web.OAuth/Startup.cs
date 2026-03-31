@@ -44,21 +44,13 @@ namespace Gnoss.Web.OAuth
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-			ILoggerFactory loggerFactory =
-			LoggerFactory.Create(builder =>
-			{
-				builder.AddConfiguration(Configuration.GetSection("Logging"));
-				builder.AddSimpleConsole(options =>
-				{
-					options.IncludeScopes = true;
-					options.SingleLine = true;
-					options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
-					options.UseUtcTimestamp = true;
-				});
-			});
+            LoggingService.ConfigurarLogging(services, Configuration);
 
-			services.AddSingleton(loggerFactory);
-			services.AddControllers();
+            // Provider temporal solo para el logger de arranque
+            using var tempProvider = services.BuildServiceProvider();
+            var loggerFactory = tempProvider.GetRequiredService<ILoggerFactory>();
+
+            services.AddControllers();
             services.AddHttpContextAccessor();
             services.AddScoped(typeof(UtilTelemetry));
             services.AddScoped(typeof(Usuario));
@@ -125,11 +117,6 @@ namespace Gnoss.Web.OAuth
                 System.Threading.ThreadPool.SetMinThreads(hilos, y);
             }
 
-            string configLogStash = configService.ObtenerLogStashConnection();
-            if (!string.IsNullOrEmpty(configLogStash))
-            {
-                LoggingService.InicializarLogstash(configLogStash);
-            }
             var entity = sp.GetService<EntityContext>();
 			var servicesUtilVirtuosoAndReplication = sp.GetService<IServicesUtilVirtuosoAndReplication>();
 			var loggingService = sp.GetService<LoggingService>();
