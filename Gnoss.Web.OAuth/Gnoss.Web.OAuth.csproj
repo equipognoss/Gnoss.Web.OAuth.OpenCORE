@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<UserSecretsId>0ed42b74-6961-49a6-9b58-df208c5c611f</UserSecretsId>
 		<DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
 		<DockerfileContext>.</DockerfileContext>
@@ -15,30 +15,19 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Azure.Identity" Version="1.17.1" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
-		<PackageReference Include="Microsoft.IdentityModel.Protocols" Version="8.1.2" />
-		<PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.1.2" />
-		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
-		<PackageReference Include="Npgsql" Version="8.0.5" />
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
-		<PackageReference Include="Oracle.EntityFrameworkCore" Version="8.23.60" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
-		<PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
-		<PackageReference Include="System.Text.Json" Version="8.0.5" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.8" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
+		<PackageReference Include="Oracle.EntityFrameworkCore" Version="10.23.26200" />
+		<PackageReference Include="StackExchange.Redis" Version="2.13.17" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.1" />
 	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Gnoss.Commons\Es.Riam.Gnoss.Web.Controles\Es.Riam.Gnoss.Web.Controles.csproj" />
-    <ProjectReference Include="..\..\Gnoss.Commons\Es.Riam.Gnoss.Web.LogicaOAuth\Es.Riam.Gnoss.Web.LogicaOAuth.csproj" />
-    <ProjectReference Include="..\..\Gnoss.Commons\Es.Riam.Gnoss.Web.UtilOAuth\Es.Riam.Gnoss.Web.UtilOAuth.csproj" />
-    <ProjectReference Include="..\..\Gnoss.Commons\Es.Riam.OpenReplication\Es.Riam.OpenReplication.csproj" />
-    <ProjectReference Include="..\..\Gnoss.Commons\Es.Riam.Open\Es.Riam.Open.csproj" />
-    <ProjectReference Include="..\..\Gnoss.Commons\Es.Riam.Util\Es.Riam.Util.csproj" />
-    <ProjectReference Include="..\..\Gnoss.Commons\Es.Riam.Web.Util\Es.Riam.Web.Util.csproj" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<ProjectReference Include="..\..\Gnoss.Commons\Es.Riam.Gnoss.HealthChecks\Es.Riam.Gnoss.HealthChecks.csproj" />
+		<ProjectReference Include="..\..\Gnoss.Commons\Es.Riam.Gnoss.Util\Es.Riam.Gnoss.Util.csproj" />
+	</ItemGroup>
+	
   <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 
 </Project>
